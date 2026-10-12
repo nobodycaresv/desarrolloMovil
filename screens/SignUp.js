@@ -1,208 +1,289 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { auth } from '../src/config/firebaseConfig';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Alert
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../src/config/firebaseConfig'; // Ajusta la ruta si es necesario según tu estructura
+import {
+  validateName,
+  validateEmail,
+  validatePhone,
+  validatePassword
+} from '../utils/validations';
 
 export default function SignUp({ navigation }) {
+  // Estados para los campos del formulario
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Estados para alternar la visibilidad de las contraseñas
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Función de registro integrada con validaciones y Firebase
   const handleSignUp = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son obligatorios.");
+    // 1. Validaciones con las Regex (del archivo del Integrante 1)
+    if (!validateName(firstName)) {
+      Alert.alert('Error', 'Por favor ingresa un nombre válido (mínimo 2 letras).');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden.");
+    if (!validateName(lastName)) {
+      Alert.alert('Error', 'Por favor ingresa un apellido válido (mínimo 2 letras).');
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!passwordRegex.test(password)) {
+    if (!validateEmail(email)) {
+      Alert.alert('Error', 'Por favor ingresa un correo electrónico válido.');
+      return;
+    }
+
+    if (!validatePhone(phone)) {
+      Alert.alert('Error', 'Por favor ingresa un número de teléfono válido (7 a 15 dígitos).');
+      return;
+    }
+
+    if (!validatePassword(password)) {
       Alert.alert(
-        "Error",
-        "La contraseña debe tener al menos 6 caracteres, incluyendo una letra mayúscula, una minúscula y un número."
+        'Contraseña inválida',
+        'La contraseña debe tener al menos 6 caracteres, una mayúscula, una minúscula y un número.'
       );
       return;
     }
 
-    let credential;
-    try {
-      credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-    } catch (error) {
-      console.error('Error de registro:', error.code, error.message);
-      let errorMessage = "Hubo un problema al registrar el usuario.";
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = "El correo electrónico ya está en uso.";
-          break;
-        case 'auth/invalid-email':
-          errorMessage = "El formato del correo electrónico no es válido.";
-          break;
-        case 'auth/weak-password':
-          errorMessage = "La contraseña es demasiado débil.";
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = "Error de conexión, por favor intenta más tarde.";
-          break;
-        case 'auth/invalid-api-key':
-          errorMessage = "La clave API de Firebase no es válida. Revisa el archivo .env.";
-          break;
-      }
-      Alert.alert("Error", `${errorMessage}\n\nCódigo: ${error.code ?? 'desconocido'}`);
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden.');
       return;
     }
 
+    // 2. Registro de usuario en Firebase
     try {
-      await updateProfile(credential.user, { displayName: `${firstName.trim()} ${lastName.trim()}` });
-      Alert.alert("Registro exitoso", "Usuario registrado con éxito.");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Guardar el nombre y apellido en el perfil del usuario de Firebase
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: `${firstName} ${lastName}`
+        });
+      }
+
+      Alert.alert('¡Éxito!', 'Cuenta creada correctamente.');
+      // Opcional: Navegar a otra pantalla si lo desean
+      // navigation.navigate('Home');
     } catch (error) {
-      Alert.alert("Cuenta creada", "La cuenta se creó, pero no se pudo guardar el nombre.");
+      console.error(error);
+      let errorMessage = 'Ocurrió un error al registrarse.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'El correo electrónico ya está registrado.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'El correo electrónico no es válido.';
+      }
+      Alert.alert('Error de registro', errorMessage);
     }
-    // Firebase inicia la sesión y el navegador muestra Home.
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
-      <Text style={styles.title}>Regístrate</Text>
-
-      <Text style={styles.label}>Nombre</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="user" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su nombre"
-          value={firstName}
-          onChangeText={setFirstName}
-        />
-      </View>
-
-      <Text style={styles.label}>Apellido</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="user" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su apellido"
-          value={lastName}
-          onChangeText={setLastName}
-        />
-      </View>
-
-      <Text style={styles.label}>Correo</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su correo"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        
+        {/* Botón Volver */}
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack()}>
+          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
         </TouchableOpacity>
-      </View>
 
-      <Text style={styles.label}>Confirmar Contraseña</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirme su contraseña"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-        />
-        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-          <FontAwesome name={showConfirmPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
-        </TouchableOpacity>
-      </View>
+        {/* Encabezado */}
+        <Text style={styles.title}>Crear cuenta</Text>
+        <Text style={styles.subtitle}>Completa los datos para registrarte</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Registrarse</Text>
-      </TouchableOpacity>
+        {/* Formulario */}
+        <View style={styles.formGroup}>
+          
+          <Text style={styles.label}>Nombre</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ingresa tu Nombre"
+            placeholderTextColor="#666666"
+            value={firstName}
+            onChangeText={setFirstName}
+          />
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.signUpText}>¿Ya tienes cuenta? Inicia sesión</Text>
-      </TouchableOpacity>
-    </View>
+          <Text style={styles.label}>Apellido</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ingresa tu Apellido"
+            placeholderTextColor="#666666"
+            value={lastName}
+            onChangeText={setLastName}
+          />
+
+          <Text style={styles.label}>Correo Electrónico</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ingresa tu Correo"
+            placeholderTextColor="#666666"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+
+          <Text style={styles.label}>Teléfono</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons name="call-outline" size={20} color="#888888" style={styles.iconLeft} />
+            <TextInput
+              style={[styles.input, styles.inputWithLeftIcon]}
+              placeholder="Ingresa tu Teléfono"
+              placeholderTextColor="#666666"
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={setPhone}
+            />
+          </View>
+
+          <Text style={styles.label}>Contraseña</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, styles.inputWithRightIcon]}
+              placeholder="Ingresa tu Contraseña"
+              placeholderTextColor="#666666"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity
+              style={styles.iconRight}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={22}
+                color="#888888"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.label}>Confirmar contraseña</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, styles.inputWithRightIcon]}
+              placeholder="Confirma tu contraseña"
+              placeholderTextColor="#666666"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity
+              style={styles.iconRight}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={22}
+                color="#888888"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Botón Registrarse (Usa el Rojo Rosario #BD201B del manual corporativo) */}
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>Registrarse</Text>
+          </TouchableOpacity>
+
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#000000', // Negro Institucional del manual
   },
-  logo: {
-    width: 100,
-    height: 100,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  backButton: {
+    marginTop: 20,
     marginBottom: 10,
+    width: 40,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  label: {
-    alignSelf: 'flex-start',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
     marginTop: 10,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderColor: '#b9770e',
-    marginBottom: 20,
+  subtitle: {
+    fontSize: 14,
+    color: '#C8C8C8', // Gris Metálico del manual
+    textAlign: 'center',
+    marginBottom: 25,
+    marginTop: 5,
+  },
+  formGroup: {
     width: '100%',
   },
-  icon: {
-    marginRight: 10,
+  label: {
+    color: '#C8C8C8', // Gris Metálico para las etiquetas
+    fontSize: 14,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  inputContainer: {
+    position: 'relative',
+    justifyContent: 'center',
   },
   input: {
-    flex: 1,
-    height: 40,
+    backgroundColor: '#1E1E1E',
+    borderColor: '#BD201B', // Rojo Rosario institucional del manual
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  inputWithLeftIcon: {
+    paddingLeft: 44,
+  },
+  inputWithRightIcon: {
+    paddingRight: 48,
+  },
+  iconLeft: {
+    position: 'absolute',
+    left: 14,
+    zIndex: 1,
+  },
+  iconRight: {
+    position: 'absolute',
+    right: 14,
+    zIndex: 1,
   },
   button: {
-    backgroundColor: '#922b21',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 5,
-    marginTop: 10,
+    backgroundColor: '#BD201B', // Rojo Rosario institucional exacto del manual
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 30,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  signUpText: {
-    marginTop: 20,
-    color: '#007AFF',
   },
 });
