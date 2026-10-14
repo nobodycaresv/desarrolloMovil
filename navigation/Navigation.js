@@ -7,6 +7,7 @@ import { auth, isFirebaseConfigured } from '../src/config/firebaseConfig';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
+import ForgotPassword from '../screens/ForgotPassword';
 
 const Stack = createStackNavigator();
 
@@ -41,6 +42,16 @@ export default function Navigation() {
           <>
             <Stack.Screen name="Login" component={Login} options={{ title: 'Iniciar sesión' }} />
             <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'Registro' }} />
+            {/* Pantalla de recuperar contraseña. El nombre 'ForgotPassword' debe coincidir con el del link en Login. */}
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPassword}
+              options={{
+                title: 'Recuperar contraseña',
+                headerStyle: { backgroundColor: '#000000' }, // barra superior negra
+                headerTintColor: '#FFFFFF',                  // flecha y título en blanco
+              }}
+            />
           </>
         )}
       </Stack.Navigator>
