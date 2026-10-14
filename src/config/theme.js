@@ -1,47 +1,39 @@
-// src/theme/theme.js
+
 
 export const colors = {
   
-  primary: '#BD201B',        
+  primary: '#BD201B',     
   primaryDark: '#8A1410',
-  primaryAlpha10: 'rgba(189, 32, 27, 0.1)',
-  primaryAlpha20: 'rgba(189, 32, 27, 0.2)',
 
-  
   background: '#000000',     
-  cardBg: '#121212',         
-  navBg: '#0D0D0D',          
-  surface: '#161616',       
+  inputBg: '#121212',     
+  cardBg: '#141414',      
 
-  
-  borderCard: '#262626',     
-  borderRed: '#ca1d10',      
+  // Bordes
+  borderInput: '#2C2C2C',    
+  borderRed: '#BD201B',   
 
-  
-  textPrimary: '#FFFFFF',
-  textSecondary: '#AAAAAA',
-  textMuted: '#777777',
+  // Textos y Placeholders
+  textPrimary: '#FFFFFF', 
+  textSecondary: '#AAAAAA',  
+  textMuted: '#666666',   
   textRed: '#BD201B',
 };
 
 export const typography = {
-   //Tamaños de fuente
   fontSize: {
-    xs: 10,
-    sm: 12,
+    xs: 12,
+    sm: 13,
     md: 14,
     lg: 16,
     xl: 20,
-    xxl: 26,
-    banner: 34,
+    title: 24,
   },
-  // Pesos de tipografía
   fontWeight: {
     regular: '400',
     medium: '500',
     semibold: '600',
     bold: '700',
-    black: '900',
   },
 };
 
@@ -50,59 +42,48 @@ export const spacing = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 20,
-  xxl: 24,
+  xl: 24,
 };
 
 export const borderRadius = {
   sm: 8,
   md: 12,
-  lg: 14,
-  xl: 16,
-  pill: 20,
+  pill: 25,
   circle: 9999,
 };
 
+export const inputStyles = {
+  container: {
+    backgroundColor: colors.inputBg,
+    borderWidth: 1,
+    borderColor: colors.borderInput,
+    borderRadius: borderRadius.pill,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    marginVertical: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.md,
+  },
+};
+
 export const buttonStyles = {
-  
   primary: {
     backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: borderRadius.md,
+    height: 50,
+    borderRadius: borderRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: spacing.md,
   },
   primaryText: {
     color: colors.textPrimary,
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
-  },
-
-  outlined: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  outlinedText: {
-    color: colors.primary,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-  },
-
-  chip: {
-    backgroundColor: colors.cardBg,
-    borderWidth: 1.5,
-    borderColor: colors.borderRed,
-    borderRadius: borderRadius.md,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignItems: 'center',
   },
 };
 
@@ -111,6 +92,7 @@ const theme = {
   typography,
   spacing,
   borderRadius,
+  inputStyles,
   buttonStyles,
 };
 
