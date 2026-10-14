@@ -11,13 +11,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../src/config/firebaseConfig'; // Ajusta la ruta si es necesario según tu estructura
+import { auth } from '../src/config/firebaseConfig'; // Ruta ajustada a tu carpeta src
 import {
   validateName,
   validateEmail,
   validatePhone,
   validatePassword
-} from '../utils/validations';
+} from '../src/utils/validations'; // Ruta exacta según tu estructura de carpetas
 
 export default function SignUp({ navigation }) {
   // Estados para los campos del formulario
@@ -34,14 +34,14 @@ export default function SignUp({ navigation }) {
 
   // Función de registro integrada con validaciones y Firebase
   const handleSignUp = async () => {
-    // 1. Validaciones con las Regex (del archivo del Integrante 1)
+    // 1. Validaciones con las Regex importadas de src/utils/validations.js
     if (!validateName(firstName)) {
-      Alert.alert('Error', 'Por favor ingresa un nombre válido (mínimo 2 letras).');
+      Alert.alert('Error', 'Por favor ingresa un nombre válido (mínimo 2 letras y solo texto).');
       return;
     }
 
     if (!validateName(lastName)) {
-      Alert.alert('Error', 'Por favor ingresa un apellido válido (mínimo 2 letras).');
+      Alert.alert('Error', 'Por favor ingresa un apellido válido (mínimo 2 letras y solo texto).');
       return;
     }
 
@@ -51,7 +51,7 @@ export default function SignUp({ navigation }) {
     }
 
     if (!validatePhone(phone)) {
-      Alert.alert('Error', 'Por favor ingresa un número de teléfono válido (7 a 15 dígitos).');
+      Alert.alert('Error', 'Por favor ingresa un número de teléfono válido.');
       return;
     }
 
@@ -68,11 +68,11 @@ export default function SignUp({ navigation }) {
       return;
     }
 
-    // 2. Registro de usuario en Firebase
+    // 2. Registro de usuario en Firebase Auth
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Guardar el nombre y apellido en el perfil del usuario de Firebase
+      // Guardar nombre y apellido en el perfil del usuario de Firebase
       if (userCredential.user) {
         await updateProfile(userCredential.user, {
           displayName: `${firstName} ${lastName}`
@@ -80,7 +80,7 @@ export default function SignUp({ navigation }) {
       }
 
       Alert.alert('¡Éxito!', 'Cuenta creada correctamente.');
-      // Opcional: Navegar a otra pantalla si lo desean
+      // Si usas navegación:
       // navigation.navigate('Home');
     } catch (error) {
       console.error(error);
@@ -196,7 +196,7 @@ export default function SignUp({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Botón Registrarse (Usa el Rojo Rosario #BD201B del manual corporativo) */}
+          {/* Botón Registrarse (Rojo Rosario #BD201B) */}
           <TouchableOpacity style={styles.button} onPress={handleSignUp}>
             <Text style={styles.buttonText}>Registrarse</Text>
           </TouchableOpacity>
@@ -210,7 +210,7 @@ export default function SignUp({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000', // Negro Institucional del manual
+    backgroundColor: '#000000', // Negro Institucional
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#C8C8C8', // Gris Metálico del manual
+    color: '#C8C8C8', // Gris Metálico
     textAlign: 'center',
     marginBottom: 25,
     marginTop: 5,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
-    color: '#C8C8C8', // Gris Metálico para las etiquetas
+    color: '#C8C8C8',
     fontSize: 14,
     marginBottom: 6,
     marginTop: 12,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#1E1E1E',
-    borderColor: '#BD201B', // Rojo Rosario institucional del manual
+    borderColor: '#BD201B', // Rojo Rosario
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   button: {
-    backgroundColor: '#BD201B', // Rojo Rosario institucional exacto del manual
+    backgroundColor: '#BD201B',
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
