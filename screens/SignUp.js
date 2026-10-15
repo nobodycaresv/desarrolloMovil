@@ -7,7 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -32,41 +36,47 @@ export default function SignUp({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Función de registro integrada con validaciones y Firebase
+  // Estado para guardar los errores específicos de cada campo y generales
+  const [errors, setErrors] = useState({});
+  const [firebaseError, setFirebaseError] = useState('');
+
+  // Función de registro integrada con validaciones en línea y Firebase
   const handleSignUp = async () => {
-    // 1. Validaciones con las Regex importadas de src/utils/validations.js
+    let newErrors = {};
+    setFirebaseError('');
+
+    // 1. Validaciones inline con las Regex importadas
     if (!validateName(firstName)) {
-      Alert.alert('Error', 'Por favor ingresa un nombre válido (mínimo 2 letras y solo texto).');
-      return;
+      newErrors.firstName = 'Ingresa un nombre válido (mínimo 2 letras y solo texto).';
     }
 
     if (!validateName(lastName)) {
-      Alert.alert('Error', 'Por favor ingresa un apellido válido (mínimo 2 letras y solo texto).');
-      return;
+      newErrors.lastName = 'Ingresa un apellido válido (mínimo 2 letras y solo texto).';
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('Error', 'Por favor ingresa un correo electrónico válido.');
-      return;
+      newErrors.email = 'Ingresa un correo electrónico válido.';
     }
 
     if (!validatePhone(phone)) {
-      Alert.alert('Error', 'Por favor ingresa un número de teléfono válido.');
-      return;
+      newErrors.phone = 'Ingresa un número de teléfono válido.';
     }
 
     if (!validatePassword(password)) {
-      Alert.alert(
-        'Contraseña inválida',
-        'La contraseña debe tener al menos 6 caracteres, una mayúscula, una minúscula y un número.'
-      );
-      return;
+      newErrors.password = 'Debe tener al menos 6 caracteres, una mayúscula, una minúscula y un número.';
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
+      newErrors.confirmPassword = 'Las contraseñas no coinciden.';
+    }
+
+    // Si existen errores, se guardan y se interrumpe el registro
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
+
+    setErrors({});
 
     // 2. Registro de usuario en Firebase Auth
     try {
@@ -84,125 +94,167 @@ export default function SignUp({ navigation }) {
       // navigation.navigate('Home');
     } catch (error) {
       console.error(error);
-      let errorMessage = 'Ocurrió un error al registrarse.';
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'El correo electrónico ya está registrado.';
+        setFirebaseError('El correo electrónico ya está registrado.');
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'El correo electrónico no es válido.';
+        setFirebaseError('El correo electrónico no es válido.');
+      } else {
+        setFirebaseError('Ocurrió un error al registrarse. Inténtalo de nuevo.');
       }
-      Alert.alert('Error de registro', errorMessage);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        
-        {/* Botón Volver */}
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        {/* Encabezado */}
-        <Text style={styles.title}>Crear cuenta</Text>
-        <Text style={styles.subtitle}>Completa los datos para registrarte</Text>
-
-        {/* Formulario */}
-        <View style={styles.formGroup}>
-          
-          <Text style={styles.label}>Nombre</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa tu Nombre"
-            placeholderTextColor="#666666"
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-
-          <Text style={styles.label}>Apellido</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa tu Apellido"
-            placeholderTextColor="#666666"
-            value={lastName}
-            onChangeText={setLastName}
-          />
-
-          <Text style={styles.label}>Correo Electrónico</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ingresa tu Correo"
-            placeholderTextColor="#666666"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          <Text style={styles.label}>Teléfono</Text>
-          <View style={styles.inputContainer}>
-            <Ionicons name="call-outline" size={20} color="#888888" style={styles.iconLeft} />
-            <TextInput
-              style={[styles.input, styles.inputWithLeftIcon]}
-              placeholder="Ingresa tu Teléfono"
-              placeholderTextColor="#666666"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-            />
-          </View>
-
-          <Text style={styles.label}>Contraseña</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, styles.inputWithRightIcon]}
-              placeholder="Ingresa tu Contraseña"
-              placeholderTextColor="#666666"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity
-              style={styles.iconRight}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={22}
-                color="#888888"
-              />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            
+            {/* Botón Volver */}
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack()}>
+              <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
             </TouchableOpacity>
-          </View>
 
-          <Text style={styles.label}>Confirmar contraseña</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, styles.inputWithRightIcon]}
-              placeholder="Confirma tu contraseña"
-              placeholderTextColor="#666666"
-              secureTextEntry={!showConfirmPassword}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-            <TouchableOpacity
-              style={styles.iconRight}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              <Ionicons
-                name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={22}
-                color="#888888"
+            {/* Encabezado */}
+            <Text style={styles.title}>Crear cuenta</Text>
+            <Text style={styles.subtitle}>Completa los datos para registrarte</Text>
+
+            {/* Error General de Firebase */}
+            {firebaseError ? (
+              <Text style={styles.globalErrorText}>{firebaseError}</Text>
+            ) : null}
+
+            {/* Formulario */}
+            <View style={styles.formGroup}>
+              
+              {/* Nombre */}
+              <Text style={styles.label}>Nombre</Text>
+              <TextInput
+                style={[styles.input, errors.firstName && styles.inputError]}
+                placeholder="Ingresa tu Nombre"
+                placeholderTextColor="#666666"
+                value={firstName}
+                onChangeText={(text) => {
+                  setFirstName(text);
+                  if (errors.firstName) setErrors({ ...errors, firstName: null });
+                }}
               />
-            </TouchableOpacity>
-          </View>
+              {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
 
-          {/* Botón Registrarse (Rojo Rosario #BD201B) */}
-          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Registrarse</Text>
-          </TouchableOpacity>
+              {/* Apellido */}
+              <Text style={styles.label}>Apellido</Text>
+              <TextInput
+                style={[styles.input, errors.lastName && styles.inputError]}
+                placeholder="Ingresa tu Apellido"
+                placeholderTextColor="#666666"
+                value={lastName}
+                onChangeText={(text) => {
+                  setLastName(text);
+                  if (errors.lastName) setErrors({ ...errors, lastName: null });
+                }}
+              />
+              {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
 
-        </View>
-      </ScrollView>
+              {/* Correo Electrónico */}
+              <Text style={styles.label}>Correo Electrónico</Text>
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="Ingresa tu Correo"
+                placeholderTextColor="#666666"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (errors.email) setErrors({ ...errors, email: null });
+                }}
+              />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+
+              {/* Teléfono */}
+              <Text style={styles.label}>Teléfono</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="call-outline" size={20} color="#888888" style={styles.iconLeft} />
+                <TextInput
+                  style={[styles.input, styles.inputWithLeftIcon, errors.phone && styles.inputError]}
+                  placeholder="Ingresa tu Teléfono"
+                  placeholderTextColor="#666666"
+                  keyboardType="phone-pad"
+                  value={phone}
+                  onChangeText={(text) => {
+                    setPhone(text);
+                    if (errors.phone) setErrors({ ...errors, phone: null });
+                  }}
+                />
+              </View>
+              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+
+              {/* Contraseña */}
+              <Text style={styles.label}>Contraseña</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, styles.inputWithRightIcon, errors.password && styles.inputError]}
+                  placeholder="Ingresa tu Contraseña"
+                  placeholderTextColor="#666666"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) setErrors({ ...errors, password: null });
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.iconRight}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={22}
+                    color="#888888"
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+              {/* Confirmar Contraseña */}
+              <Text style={styles.label}>Confirmar contraseña</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, styles.inputWithRightIcon, errors.confirmPassword && styles.inputError]}
+                  placeholder="Confirma tu contraseña"
+                  placeholderTextColor="#666666"
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: null });
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.iconRight}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={22}
+                    color="#888888"
+                  />
+                </TouchableOpacity>
+              </View>
+              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+
+              {/* Botón Registrarse */}
+              <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+                <Text style={styles.buttonText}>Registrarse</Text>
+              </TouchableOpacity>
+
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -232,7 +284,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#C8C8C8', // Gris Metálico
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 20,
     marginTop: 5,
   },
   formGroup: {
@@ -257,6 +309,23 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: '#FFFFFF',
     fontSize: 14,
+  },
+  inputError: {
+    borderColor: '#FF3B30', // Rojo de alerta para campos inválidos
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  globalErrorText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   inputWithLeftIcon: {
     paddingLeft: 44,
