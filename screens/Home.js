@@ -12,18 +12,20 @@ export default function Home() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
         {/* Logo / Banner */}
         <View style={styles.bannerContainer}>
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoText}>ROSARIO</Text>
-            <Text style={styles.logoSubText}>— ESTÉTICA VEHICULAR —</Text>
-          </View>
+          <Image 
+            source={require('../assets/Logo_RosarioEstetica.jpg')} 
+            style={styles.logoImage}
+            resizeMode="contain" 
+          />
         </View>
-
+        
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Text style={styles.statTitle}>Desde</Text>
-            <Text style={styles.statValue}>2024</Text>
+            <Text style={styles.statValueRed}>2024</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statTitle}>Rosario de</Text>
@@ -111,31 +113,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
+  
   bannerContainer: {
-    backgroundColor: '#111111',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
-    height: 140,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 15,
   },
-  logoPlaceholder: {
-    alignItems: 'center',
+
+  logoImage: {
+    width: 260,
+    height: 100,
+    resizeMode: 'contain',
   },
-  logoText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 2,
+
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 12,
   },
-  logoSubText: {
-    color: '#BD201B',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
+
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
