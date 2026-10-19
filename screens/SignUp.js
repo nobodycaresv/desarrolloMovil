@@ -11,89 +11,93 @@ import {
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
-  Platform
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../src/config/firebaseConfig'; // Ruta ajustada a tu carpeta src
+import { auth } from '../src/config/firebaseConfig';
 import {
   validateName,
   validateEmail,
   validatePhone,
-  validatePassword
-} from '../src/utils/validations'; // Ruta exacta según tu estructura de carpetas
+  validatePassword,
+} from '../src/utils/validations';
 
 export default function SignUp({ navigation }) {
-  // Estados para los campos del formulario
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
 
-  // Estados para alternar la visibilidad de las contraseñas
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Estado para guardar los errores específicos de cada campo y generales
+  const [showPass, setShowPass] = useState({ password: false, confirm: false });
   const [errors, setErrors] = useState({});
+  const [isPassFocused, setIsPassFocused] = useState(false);
   const [firebaseError, setFirebaseError] = useState('');
 
-  // Función de registro integrada con validaciones en línea y Firebase
+  const updateField = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: null }));
+  };
+
+  const handleBlur = (field) => {
+    let errs = { ...errors };
+    if (field === 'firstName' && !validateName(form.firstName)) {
+      errs.firstName = 'Ingresa un nombre válido (mínimo 2 letras y solo texto).';
+    } else if (field === 'lastName' && !validateName(form.lastName)) {
+      errs.lastName = 'Ingresa un apellido válido (mínimo 2 letras y solo texto).';
+    } else if (field === 'email' && !validateEmail(form.email)) {
+      errs.email = 'Ingresa un correo electrónico válido.';
+    } else if (field === 'phone' && !validatePhone(form.phone)) {
+      errs.phone = 'Ingresa un número de teléfono válido.';
+    } else {
+      delete errs[field];
+    }
+    setErrors(errs);
+  };
+
+  const passRules = {
+    length: form.password.length >= 6,
+    upper: /[A-Z]/.test(form.password),
+    lower: /[a-z]/.test(form.password),
+    number: /\d/.test(form.password),
+  };
+
   const handleSignUp = async () => {
-    let newErrors = {};
+    let errs = {};
     setFirebaseError('');
 
-    // 1. Validaciones inline con las Regex importadas
-    if (!validateName(firstName)) {
-      newErrors.firstName = 'Ingresa un nombre válido (mínimo 2 letras y solo texto).';
+    if (!validateName(form.firstName)) errs.firstName = 'Ingresa un nombre válido (mínimo 2 letras y solo texto).';
+    if (!validateName(form.lastName)) errs.lastName = 'Ingresa un apellido válido (mínimo 2 letras y solo texto).';
+    if (!validateEmail(form.email)) errs.email = 'Ingresa un correo electrónico válido.';
+    if (!validatePhone(form.phone)) errs.phone = 'Ingresa un número de teléfono válido.';
+    if (!validatePassword(form.password)) errs.password = 'La contraseña no cumple con los requisitos mínimos.';
+    if (form.password !== form.confirmPassword) {
+      errs.confirmPassword = 'Las contraseñas no coinciden.';
     }
 
-    if (!validateName(lastName)) {
-      newErrors.lastName = 'Ingresa un apellido válido (mínimo 2 letras y solo texto).';
-    }
-
-    if (!validateEmail(email)) {
-      newErrors.email = 'Ingresa un correo electrónico válido.';
-    }
-
-    if (!validatePhone(phone)) {
-      newErrors.phone = 'Ingresa un número de teléfono válido.';
-    }
-
-    if (!validatePassword(password)) {
-      newErrors.password = 'Debe tener al menos 6 caracteres, una mayúscula, una minúscula y un número.';
-    }
-
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden.';
-    }
-
-    // Si existen errores, se guardan y se interrumpe el registro
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
 
-    setErrors({});
-
-    // 2. Registro de usuario en Firebase Auth
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Guardar nombre y apellido en el perfil del usuario de Firebase
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-          displayName: `${firstName} ${lastName}`
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        form.email,
+        form.password
+      );
+      if (cred.user) {
+        await updateProfile(cred.user, {
+          displayName: `${form.firstName.trim()} ${form.lastName.trim()}`,
         });
       }
-
       Alert.alert('¡Éxito!', 'Cuenta creada correctamente.');
-      // Si usas navegación:
-      // navigation.navigate('Home');
+      // Sin navegación a Home: la sesión pasa sola de forma global.
     } catch (error) {
-      console.error(error);
       if (error.code === 'auth/email-already-in-use') {
         setFirebaseError('El correo electrónico ya está registrado.');
       } else if (error.code === 'auth/invalid-email') {
@@ -111,146 +115,191 @@ export default function SignUp({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-            
-            {/* Botón Volver */}
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation?.goBack()}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation?.goBack()}
+            >
               <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
             </TouchableOpacity>
 
-            {/* Encabezado */}
             <Text style={styles.title}>Crear cuenta</Text>
-            <Text style={styles.subtitle}>Completa los datos para registrarte</Text>
+            <Text style={styles.subtitle}>
+              Completa los datos para registrarte
+            </Text>
 
-            {/* Error General de Firebase */}
             {firebaseError ? (
-              <Text style={styles.globalErrorText}>{firebaseError}</Text>
+              <Text style={styles.errorText}>{firebaseError}</Text>
             ) : null}
 
-            {/* Formulario */}
             <View style={styles.formGroup}>
-              
-              {/* Nombre */}
-              <Text style={styles.label}>Nombre</Text>
-              <TextInput
-                style={[styles.input, errors.firstName && styles.inputError]}
-                placeholder="Ingresa tu Nombre"
-                placeholderTextColor="#666666"
-                value={firstName}
-                onChangeText={(text) => {
-                  setFirstName(text);
-                  if (errors.firstName) setErrors({ ...errors, firstName: null });
-                }}
-              />
-              {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+              {[
+                {
+                  label: 'Nombre',
+                  key: 'firstName',
+                  placeholder: 'Ingresa tu Nombre',
+                },
+                {
+                  label: 'Apellido',
+                  key: 'lastName',
+                  placeholder: 'Ingresa tu Apellido',
+                },
+                {
+                  label: 'Correo Electrónico',
+                  key: 'email',
+                  placeholder: 'Ingresa tu Correo',
+                  keyboard: 'email-address',
+                  autoCap: 'none',
+                },
+                {
+                  label: 'Teléfono',
+                  key: 'phone',
+                  placeholder: 'Ingresa tu Teléfono',
+                  keyboard: 'phone-pad',
+                  icon: 'call-outline',
+                },
+              ].map((item) => (
+                <View key={item.key}>
+                  <Text style={styles.label}>{item.label}</Text>
+                  <View style={styles.inputContainer}>
+                    {item.icon && (
+                      <Ionicons
+                        name={item.icon}
+                        size={20}
+                        color="#888888"
+                        style={styles.iconLeft}
+                      />
+                    )}
+                    <TextInput
+                      style={[
+                        styles.input,
+                        item.icon && styles.inputWithLeftIcon,
+                        errors[item.key] && styles.inputError,
+                      ]}
+                      placeholder={item.placeholder}
+                      placeholderTextColor="#666666"
+                      value={form[item.key]}
+                      onChangeText={(val) => updateField(item.key, val)}
+                      onBlur={() => handleBlur(item.key)}
+                      keyboardType={item.keyboard || 'default'}
+                      autoCapitalize={item.autoCap || 'sentences'}
+                    />
+                  </View>
+                  {errors[item.key] && (
+                    <Text style={styles.errorText}>{errors[item.key]}</Text>
+                  )}
+                </View>
+              ))}
 
-              {/* Apellido */}
-              <Text style={styles.label}>Apellido</Text>
-              <TextInput
-                style={[styles.input, errors.lastName && styles.inputError]}
-                placeholder="Ingresa tu Apellido"
-                placeholderTextColor="#666666"
-                value={lastName}
-                onChangeText={(text) => {
-                  setLastName(text);
-                  if (errors.lastName) setErrors({ ...errors, lastName: null });
-                }}
-              />
-              {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
-
-              {/* Correo Electrónico */}
-              <Text style={styles.label}>Correo Electrónico</Text>
-              <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
-                placeholder="Ingresa tu Correo"
-                placeholderTextColor="#666666"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  if (errors.email) setErrors({ ...errors, email: null });
-                }}
-              />
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-
-              {/* Teléfono */}
-              <Text style={styles.label}>Teléfono</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="call-outline" size={20} color="#888888" style={styles.iconLeft} />
-                <TextInput
-                  style={[styles.input, styles.inputWithLeftIcon, errors.phone && styles.inputError]}
-                  placeholder="Ingresa tu Teléfono"
-                  placeholderTextColor="#666666"
-                  keyboardType="phone-pad"
-                  value={phone}
-                  onChangeText={(text) => {
-                    setPhone(text);
-                    if (errors.phone) setErrors({ ...errors, phone: null });
-                  }}
-                />
-              </View>
-              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-
-              {/* Contraseña */}
               <Text style={styles.label}>Contraseña</Text>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.input, styles.inputWithRightIcon, errors.password && styles.inputError]}
+                  style={[
+                    styles.input,
+                    styles.inputWithRightIcon,
+                    errors.password && styles.inputError,
+                  ]}
                   placeholder="Ingresa tu Contraseña"
                   placeholderTextColor="#666666"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (errors.password) setErrors({ ...errors, password: null });
-                  }}
+                  secureTextEntry={!showPass.password}
+                  value={form.password}
+                  onChangeText={(val) => updateField('password', val)}
+                  onFocus={() => setIsPassFocused(true)}
+                  onBlur={() => setIsPassFocused(false)}
                 />
                 <TouchableOpacity
                   style={styles.iconRight}
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={() =>
+                    setShowPass((p) => ({ ...p, password: !p.password }))
+                  }
                 >
                   <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    name={showPass.password ? 'eye-outline' : 'eye-off-outline'}
                     size={22}
                     color="#888888"
                   />
                 </TouchableOpacity>
               </View>
-              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-              {/* Confirmar Contraseña */}
+              {isPassFocused && (
+                <View style={styles.reqContainer}>
+                  <Text
+                    style={[
+                      styles.reqText,
+                      passRules.length && styles.reqValid,
+                    ]}
+                  >
+                    • Al menos 6 caracteres
+                  </Text>
+                  <Text
+                    style={[styles.reqText, passRules.upper && styles.reqValid]}
+                  >
+                    • Una letra mayúscula
+                  </Text>
+                  <Text
+                    style={[styles.reqText, passRules.lower && styles.reqValid]}
+                  >
+                    • Una letra minúscula
+                  </Text>
+                  <Text
+                    style={[styles.reqText, passRules.number && styles.reqValid]}
+                  >
+                    • Un número
+                  </Text>
+                </View>
+              )}
+
               <Text style={styles.label}>Confirmar contraseña</Text>
               <View style={styles.inputContainer}>
                 <TextInput
-                  style={[styles.input, styles.inputWithRightIcon, errors.confirmPassword && styles.inputError]}
+                  style={[
+                    styles.input,
+                    styles.inputWithRightIcon,
+                    errors.confirmPassword && styles.inputError,
+                  ]}
                   placeholder="Confirma tu contraseña"
                   placeholderTextColor="#666666"
-                  secureTextEntry={!showConfirmPassword}
-                  value={confirmPassword}
-                  onChangeText={(text) => {
-                    setConfirmPassword(text);
-                    if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: null });
+                  secureTextEntry={!showPass.confirm}
+                  value={form.confirmPassword}
+                  onChangeText={(val) => {
+                    updateField('confirmPassword', val);
+                    if (val !== form.password) {
+                      setErrors((e) => ({
+                        ...e,
+                        confirmPassword: 'Las contraseñas no coinciden.',
+                      }));
+                    } else {
+                      setErrors((e) => {
+                        const copy = { ...e };
+                        delete copy.confirmPassword;
+                        return copy;
+                      });
+                    }
                   }}
                 />
                 <TouchableOpacity
                   style={styles.iconRight}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onPress={() =>
+                    setShowPass((p) => ({ ...p, confirm: !p.confirm }))
+                  }
                 >
                   <Ionicons
-                    name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                    name={showPass.confirm ? 'eye-outline' : 'eye-off-outline'}
                     size={22}
                     color="#888888"
                   />
                 </TouchableOpacity>
               </View>
-              {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+              {errors.confirmPassword && (
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              )}
 
-              {/* Botón Registrarse */}
               <TouchableOpacity style={styles.button} onPress={handleSignUp}>
                 <Text style={styles.buttonText}>Registrarse</Text>
               </TouchableOpacity>
-
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -260,19 +309,9 @@ export default function SignUp({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000', // Negro Institucional
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  backButton: {
-    marginTop: 20,
-    marginBottom: 10,
-    width: 40,
-  },
+  container: { flex: 1, backgroundColor: '#000000' },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  backButton: { marginTop: 20, marginBottom: 10, width: 40 },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
@@ -282,27 +321,17 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#C8C8C8', // Gris Metálico
+    color: '#C8C8C8',
     textAlign: 'center',
     marginBottom: 20,
     marginTop: 5,
   },
-  formGroup: {
-    width: '100%',
-  },
-  label: {
-    color: '#C8C8C8',
-    fontSize: 14,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  inputContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
+  formGroup: { width: '100%' },
+  label: { color: '#C8C8C8', fontSize: 14, marginBottom: 6, marginTop: 12 },
+  inputContainer: { position: 'relative', justifyContent: 'center' },
   input: {
     backgroundColor: '#1E1E1E',
-    borderColor: '#BD201B', // Rojo Rosario
+    borderColor: '#BD201B',
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 16,
@@ -310,39 +339,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
   },
-  inputError: {
-    borderColor: '#FF3B30', // Rojo de alerta para campos inválidos
-    borderWidth: 1.5,
-  },
-  errorText: {
-    color: '#FF3B30',
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  globalErrorText: {
-    color: '#FF3B30',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  inputWithLeftIcon: {
-    paddingLeft: 44,
-  },
-  inputWithRightIcon: {
-    paddingRight: 48,
-  },
-  iconLeft: {
-    position: 'absolute',
-    left: 14,
-    zIndex: 1,
-  },
-  iconRight: {
-    position: 'absolute',
-    right: 14,
-    zIndex: 1,
-  },
+  inputError: { borderColor: '#FF3B30', borderWidth: 1.5 },
+  errorText: { color: '#FF3B30', fontSize: 12, marginTop: 4, marginLeft: 4 },
+  inputWithLeftIcon: { paddingLeft: 44 },
+  inputWithRightIcon: { paddingRight: 48 },
+  iconLeft: { position: 'absolute', left: 14, zIndex: 1 },
+  iconRight: { position: 'absolute', right: 14, zIndex: 1 },
+  reqContainer: { marginTop: 6, marginBottom: 4, marginLeft: 4 },
+  reqText: { color: '#888888', fontSize: 12 },
+  reqValid: { color: '#34C759' },
   button: {
     backgroundColor: '#BD201B',
     borderRadius: 16,
@@ -350,9 +355,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });
