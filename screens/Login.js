@@ -151,6 +151,9 @@ const validarContrasena = (contrasena) => {
         > 
         <Text style={styles.textoOlvidaste}>¿Olvidaste tu contraseña?</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+        <Text style={styles.textoOlvidaste}>¿No tienes cuenta aún? Regístrate</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
