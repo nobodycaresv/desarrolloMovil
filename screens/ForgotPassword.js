@@ -1,26 +1,18 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   KeyboardAvoidingView, ScrollView, Platform, // Para que el teclado no tape el campo
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons'; // Íconos (sobre)
+import { SafeAreaView } from 'react-native-safe-area-context'; // Respeta la zona segura (notch, barra de estado)
+import { Ionicons } from '@expo/vector-icons'; // Íconos (flecha atrás, sobre)
 import { sendPasswordResetEmail } from 'firebase/auth'; // Función de Firebase que envía el correo de recuperación
 import { auth } from '../src/config/firebaseConfig'; // Conexión a Firebase
-
-// Están acá adentro para que esta pantalla no dependa de otros archivos.
-const colors = {
-  background: '#000000', // Negro institucional
-  primary: '#BD201B',    // Rojo Rosario (botón y línea del campo)
-  text: '#FFFFFF',       // Blanco
-  muted: '#C8C8C8',      // Gris metálico (ícono, placeholder, links)
-  error: '#FF5A5A',      // Rojo claro para errores, legible sobre negro
-};
-
-// Cuando la dupla suba utils/validations.js, borrar esta función y usar:
-// import { validarEmail } from '../utils/validations';
-// Comprueba que el correo tenga formato válido (ejemplo@dominio.com)
-const validarEmail = (v) =>
-  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v.trim());
+// Estilos compartidos del grupo (tema de Mati): colores, tamaños y estilos de campo y botón
+import {
+  colors, typography, spacing, inputStyles, buttonStyles,
+} from '../src/config/theme';
+// Validación de correo compartida (la hizo Mario)
+import { validateEmail } from '../src/utils/validations';
 
 // Mensaje único: se muestra exista o no la cuenta, para no revelar qué correos están registrados
 const MENSAJE_CONFIRMACION =
@@ -28,11 +20,11 @@ const MENSAJE_CONFIRMACION =
 
 export default function ForgotPassword({ navigation }) {
   // Estados de la pantalla
-  const [email, setEmail] = useState('');       // lo que escribe el usuario
+  const [email, setEmail] = useState('');        // lo que escribe el usuario
   const [touched, setTouched] = useState(false); // true cuando ya salió del campo (para mostrar el error recién ahí)
   const [loading, setLoading] = useState(false); // true mientras se envía (evita doble toque)
 
-  const emailValido = validarEmail(email);
+  const emailValido = validateEmail(email.trim());
   // Se muestra el error solo si ya salió del campo, escribió algo y el formato es incorrecto
   const mostrarError = touched && email.length > 0 && !emailValido;
 
@@ -62,107 +54,106 @@ export default function ForgotPassword({ navigation }) {
   };
 
   return (
-    // KeyboardAvoidingView: sube el contenido cuando aparece el teclado
-    <KeyboardAvoidingView
-      style={styles.keyboardContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      {/* ScrollView: permite desplazarse si el contenido no entra en pantalla */}
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled" // Los botones responden al primer toque aunque haya teclado
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.container}>
+      {/* KeyboardAvoidingView: sube el contenido cuando aparece el teclado */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Logo de Rosario Estética Vehicular */}
-        <Image source={require('../assets/logo-rosario.png')} style={styles.logo} />
-        <Text style={styles.title}>Recuperar contraseña</Text>
-        <Text style={styles.subtitle}>
-          Ingrese su correo y le enviaremos un enlace para restablecerla.
-        </Text>
-
-        {/* Campo: correo */}
-        <Text style={styles.label}>Correo</Text>
-        <View style={[styles.inputContainer, mostrarError && styles.inputError]}>
-          <FontAwesome name="envelope" size={20} color={colors.muted} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Ingrese su correo"
-            placeholderTextColor={colors.muted}
-            value={email}
-            onChangeText={setEmail}
-            onBlur={() => setTouched(true)} // Valida al salir del campo
-            keyboardType="email-address"    // Teclado con @
-            autoCapitalize="none"           // No pone mayúscula al inicio
-            autoCorrect={false}
-          />
-        </View>
-        {/* Mensaje de error bajo el campo (solo si el formato es incorrecto) */}
-        {mostrarError && (
-          <Text style={styles.errorText}>Por favor, ingrese un formato de correo válido.</Text>
-        )}
-
-        {/* Botón ENVIAR: apagado hasta que el correo sea válido */}
-        <TouchableOpacity
-          style={[styles.button, (!emailValido || loading) && styles.buttonDisabled]}
-          onPress={handleSend}
-          disabled={!emailValido || loading}
+        {/* ScrollView: permite desplazarse si el contenido no entra en pantalla */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled" // Los botones responden al primer toque aunque haya teclado
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.buttonText}>ENVIAR</Text>
-        </TouchableOpacity>
+          {/* Botón para volver a la pantalla anterior (si no hay una, va a Login) */}
+          <TouchableOpacity style={styles.backButton} onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Login'))}>
+            <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
+          </TouchableOpacity>
 
-        {/* Link para volver al inicio de sesión */}
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.linkText}>Volver a iniciar sesión</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {/* Encabezado */}
+          <Text style={styles.title}>Recuperar contraseña</Text>
+          <Text style={styles.subtitle}>
+            Ingrese su correo y le enviaremos un enlace para restablecerla
+          </Text>
+
+          {/* Campo: correo (el estilo viene del tema; si hay error se pinta el borde de rojo) */}
+          <Text style={styles.label}>Correo electrónico</Text>
+          <View style={[inputStyles.container, mostrarError && styles.inputError]}>
+            <Ionicons
+              name="mail-outline"
+              size={20}
+              color={colors.textSecondary}
+              style={styles.icon}
+            />
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Ingresa tu correo"
+              placeholderTextColor={colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              onBlur={() => setTouched(true)} // Valida al salir del campo
+              keyboardType="email-address"    // Teclado con @
+              autoCapitalize="none"           // No pone mayúscula al inicio
+              autoCorrect={false}
+            />
+          </View>
+          {/* Mensaje de error bajo el campo (solo si el formato es incorrecto) */}
+          {mostrarError && (
+            <Text style={styles.errorText}>Por favor, ingrese un formato de correo válido.</Text>
+          )}
+
+          {/* Botón ENVIAR: apagado hasta que el correo sea válido (estilo del tema) */}
+          <TouchableOpacity
+            style={[buttonStyles.primary, (!emailValido || loading) && styles.buttonDisabled]}
+            onPress={handleSend}
+            disabled={!emailValido || loading}
+          >
+            <Text style={buttonStyles.primaryText}>ENVIAR</Text>
+          </TouchableOpacity>
+
+          {/* Link para volver al inicio de sesión */}
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.linkText}>Volver a iniciar sesión</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+// Solo estilos propios de esta pantalla; el resto sale de theme.js
 const styles = StyleSheet.create({
-  // Fondo negro detrás de todo (evita que se vea blanco al subir el teclado)
-  keyboardContainer: { flex: 1, backgroundColor: colors.background },
-  // flexGrow (y no flex) permite que el contenido se desplace si no entra
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: colors.background }, // fondo negro
+  flex: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1, // flexGrow (y no flex) permite desplazarse si no entra todo
+    paddingHorizontal: spacing.xl,
+    paddingBottom: 40,
   },
-  logo: { width: 220, height: 110, resizeMode: 'contain', marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10, color: colors.text },
-  subtitle: { textAlign: 'center', color: colors.muted, marginBottom: 10 },
+  backButton: { marginTop: spacing.lg, marginBottom: spacing.sm, width: 40 },
+  title: {
+    fontSize: typography.fontSize.title,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  subtitle: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
+  },
   label: {
-    alignSelf: 'flex-start',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-    color: colors.text,
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
   },
-  // Fila del campo: ícono + texto + línea roja abajo
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderColor: colors.primary,
-    marginBottom: 6,
-    width: '100%',
-  },
-  icon: { marginRight: 10 },
-  input: { flex: 1, height: 40, color: colors.text }, // Texto escrito en blanco
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  buttonText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
-  linkText: { marginTop: 20, color: colors.muted },
-
-  // Estilos propios de esta función
-  inputError: { borderColor: colors.error },                                       // línea del campo en rojo claro si hay error
-  errorText: { alignSelf: 'flex-start', color: colors.error, fontSize: 13, marginBottom: 10 }, // texto del error
-  buttonDisabled: { opacity: 0.5 },                                                // botón atenuado cuando está deshabilitado
+  icon: { marginRight: spacing.sm },
+  inputError: { borderColor: colors.borderRed },                       // borde rojo cuando el correo es inválido
+  errorText: { color: colors.textRed, fontSize: typography.fontSize.sm, marginLeft: spacing.sm },
+  buttonDisabled: { opacity: 0.5 },                                    // botón atenuado cuando está deshabilitado
+  linkText: { textAlign: 'center', color: colors.textSecondary, marginTop: spacing.md },
 });
