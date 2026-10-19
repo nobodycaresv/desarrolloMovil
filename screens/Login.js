@@ -12,10 +12,6 @@ import {
   colors, typography, spacing, inputStyles, buttonStyles,
 } from '../src/config/theme';
 
-// ---------------------------------------------------------------------------
-// Validación en el lado del cliente (documento: "Módulo de inicio de sesión")
-// ---------------------------------------------------------------------------
-
 // Presencia: el campo no puede estar vacío ni tener solo espacios
 const estaVacio = (valor) => valor.trim().length === 0;
 
@@ -37,10 +33,7 @@ const validarContrasena = (contrasena) => {
   return '';
 };
 
-// ---------------------------------------------------------------------------
 // Mensajes del servidor
-// ---------------------------------------------------------------------------
-
 // Mensaje único para CUALQUIER fallo de autenticación (usuario inexistente, contraseña
 // incorrecta, cuenta deshabilitada...). Así no se revela qué correos están registrados
 // (evita la enumeración de usuarios).
