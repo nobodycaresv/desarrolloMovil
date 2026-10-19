@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,Image,
   KeyboardAvoidingView, ScrollView, Platform, // Para que el teclado no tape los campos
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; // Respeta la zona segura (notch, barra de estado)
@@ -124,6 +124,8 @@ export default function Login({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           {/* Encabezado */}
+          {/* Logo de Rosario Estética Vehicular */}
+          <Image source={require('../assets/logo-rosario.png')} style={styles.logo} />
           <Text style={styles.title}>Iniciar sesión</Text>
           <Text style={styles.subtitle}>Ingrese su correo y contraseña para continuar</Text>
 
@@ -252,5 +254,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSecondary,
     marginTop: spacing.md,
+  },
+    logo: {
+    width: 220,
+    height: 110,          // respeta la proporción del archivo (725×360)
+    resizeMode: 'contain', // no deforma ni recorta la imagen
+    alignSelf: 'center',   // lo centra horizontalmente
+    marginBottom: spacing.xl,
   },
 });
