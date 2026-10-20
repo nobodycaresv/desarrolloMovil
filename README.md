@@ -116,7 +116,8 @@ login-signup-alumnos/
 ├── screens/
 │   ├── Home.js
 │   ├── Login.js
-│   └── SignUp.js
+│   ├── SignUp.js
+│   └──ForgotPassword.js
 ├── src/config/firebaseConfig.js
 ├── .env.example
 ├── App.js
