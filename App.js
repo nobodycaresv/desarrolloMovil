@@ -1,9 +1,5 @@
-import { Text, View } from 'react-native';
+import Servicios from './src/screens/Servicios';
 
 export default function App() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Probando Firestore…</Text>
-    </View>
-  );
+  return <Servicios />;
 }
