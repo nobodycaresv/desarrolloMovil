@@ -8,6 +8,7 @@ import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
 import ForgotPassword from '../screens/ForgotPassword';
+import Servicios from '../screens/Servicios';
 
 const Stack = createStackNavigator();
 
@@ -37,7 +38,10 @@ export default function Navigation() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Home" component={Home} />
+          <>
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="Servicios" component={Servicios} options={{ headerShown: true, title: 'Servicios' }} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={Login} />

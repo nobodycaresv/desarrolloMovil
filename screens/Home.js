@@ -4,7 +4,7 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 
-export default function Home() {
+export default function Home({ navigation }) {
 
   const handleCerrarSesion = () => {
     Alert.alert(
@@ -42,7 +42,12 @@ export default function Home() {
           <Ionicons name="log-out-outline" size={24} color="#BD201B" />
         </TouchableOpacity>
       </View>
-
+      <TouchableOpacity
+        style={{ backgroundColor: '#BD201B', padding: 12, borderRadius: 24, margin: 16 }}
+        onPress={() => navigation.navigate('Servicios')}
+      >
+        <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Ver servicios</Text>
+</TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scrollPantalla} showsVerticalScrollIndicator={false}>
 
         {/* Logo de nuestra empresa*/}
