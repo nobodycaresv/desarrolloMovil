@@ -12,10 +12,10 @@ import {
   colors, typography, spacing, inputStyles, buttonStyles,
 } from '../src/config/theme';
 
-// Presencia: el campo no puede estar vacío ni tener solo espacios
+// no puede estar vacío ni tener solo espacios
 const estaVacio = (valor) => valor.trim().length === 0;
 
-// Formato básico: el correo debe contener '@' y '.'
+// el correo debe contener '@' y '.'
 const tieneFormatoBasico = (correo) => {
   const texto = correo.trim();
   return texto.includes('@') && texto.includes('.');
@@ -33,15 +33,12 @@ const validarContrasena = (contrasena) => {
   return '';
 };
 
-// Mensajes del servidor
 // Mensaje único para CUALQUIER fallo de autenticación (usuario inexistente, contraseña
-// incorrecta, cuenta deshabilitada...). Así no se revela qué correos están registrados
-// (evita la enumeración de usuarios).
+// incorrecta, cuenta deshabilitada...)
 const MENSAJE_CREDENCIALES = 'Credenciales inválidas. Por favor, verifique su correo y contraseña.';
 const MENSAJE_CONEXION = 'Error de conexión, por favor intente más tarde.';
 
 export default function Login({ navigation }) {
-  // Estados de la pantalla
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [errores, setErrores] = useState({ correo: '', contrasena: '' }); // errores por campo
@@ -52,7 +49,7 @@ export default function Login({ navigation }) {
   // El botón "Ingresar" queda deshabilitado hasta que ambos campos estén completos
   const formularioCompleto = !estaVacio(correo) && !estaVacio(contrasena);
 
-  // Al escribir: se actualiza el valor y se limpian los errores para que el usuario corrija
+  // Al escribir se actualiza el valor y se limpian los errores para que el usuario corrija
   const manejarCambioCorreo = (texto) => {
     setCorreo(texto);
     if (errores.correo) setErrores((prev) => ({ ...prev, correo: '' }));
@@ -65,7 +62,7 @@ export default function Login({ navigation }) {
     if (errorServidor) setErrorServidor('');
   };
 
-  // Al salir de un campo se valida ese campo (error contextual debajo del mismo)
+  // Al salir de un campo se valida ese campo
   const manejarBlurCorreo = () => setErrores((prev) => ({ ...prev, correo: validarCorreo(correo) }));
   const manejarBlurContrasena = () => setErrores((prev) => ({ ...prev, contrasena: validarContrasena(contrasena) }));
 
@@ -73,7 +70,7 @@ export default function Login({ navigation }) {
   const manejarIngresar = async () => {
     if (loading) return;
 
-    // 1) Validación del cliente: si hay algún error, no se llama al servidor
+    // Validación del cliente, si hay algún error, no se llama al servidor
     const nuevosErrores = {
       correo: validarCorreo(correo),
       contrasena: validarContrasena(contrasena),
@@ -82,18 +79,14 @@ export default function Login({ navigation }) {
     setErrorServidor('');
     if (nuevosErrores.correo || nuevosErrores.contrasena) return;
 
-    // 2) Validación del servidor: Firebase Authentication comprueba correo y contraseña
+    //Firebase Authentication comprueba correo y contraseña
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, correo.trim(), contrasena);
-      // No hace falta navegar a Home: Navigation.js escucha la sesión (onAuthStateChanged)
-      // y cambia de pantalla solo cuando el usuario inicia sesión.
+      await signInWithEmailAndPassword(auth, correo.trim(), contrasena); // cambia de pantalla solo cuando el usuario inicia sesión.
     } catch (error) {
       if (error.code === 'auth/network-request-failed') {
-        // Falla de internet: no tiene que ver con las credenciales, así que se avisa aparte
         setErrorServidor(MENSAJE_CONEXION);
       } else {
-        // Cualquier otro fallo muestra el MISMO mensaje genérico
         setErrorServidor(MENSAJE_CREDENCIALES);
       }
     } finally {
@@ -105,27 +98,24 @@ export default function Login({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* KeyboardAvoidingView: sube el contenido cuando aparece el teclado */}
+      {/* KeyboardAvoidingView sube el contenido cuando aparece el teclado */}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ScrollView: permite desplazarse si el contenido no entra en pantalla */}
+        {/* ScrollView permite desplazarse si el contenido no entra en pantalla */}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled" // Los botones responden al primer toque aunque haya teclado
           showsVerticalScrollIndicator={false}
         >
-          {/* Encabezado */}
-          {/* Logo de Rosario Estética Vehicular */}
           <Image source={require('../assets/logo-rosario.png')} style={styles.logo} />
           <Text style={styles.title}>Iniciar sesión</Text>
           <Text style={styles.subtitle}>Ingrese su correo y contraseña para continuar</Text>
 
-          {/* Error devuelto por el servidor (mensaje genérico o de conexión) */}
+          {/* Muestra error del sesrvidor */}
           {errorServidor ? <Text style={styles.errorServidor}>{errorServidor}</Text> : null}
 
-          {/* Campo: correo electrónico */}
           <Text style={styles.label}>Correo electrónico</Text>
           <View style={[inputStyles.container, errores.correo ? styles.inputError : null]}>
             <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.icon} />
@@ -145,7 +135,6 @@ export default function Login({ navigation }) {
           </View>
           {errores.correo ? <Text style={styles.errorText}>{errores.correo}</Text> : null}
 
-          {/* Campo: contraseña */}
           <Text style={styles.label}>Contraseña</Text>
           <View style={[inputStyles.container, errores.contrasena ? styles.inputError : null]}>
             <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.icon} />
@@ -155,7 +144,7 @@ export default function Login({ navigation }) {
               placeholderTextColor={colors.textMuted}
               value={contrasena}
               onChangeText={manejarCambioContrasena}
-              onBlur={manejarBlurContrasena} // Valida al salir del campo
+              onBlur={manejarBlurContrasena}
               secureTextEntry={!mostrarContrasena}
               autoCapitalize="none"
               autoCorrect={false}
@@ -177,7 +166,6 @@ export default function Login({ navigation }) {
           </View>
           {errores.contrasena ? <Text style={styles.errorText}>{errores.contrasena}</Text> : null}
 
-          {/* Botón INGRESAR: apagado hasta que ambos campos estén completos */}
           <TouchableOpacity
             style={[buttonStyles.primary, botonDeshabilitado && styles.buttonDisabled]}
             onPress={manejarIngresar}
@@ -201,7 +189,7 @@ export default function Login({ navigation }) {
   );
 }
 
-// Solo estilos propios de esta pantalla; el resto sale de theme.js
+// Aqui se ven los estilos de esta pantalla, el resto sale de theme.js
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background }, // fondo negro
   flex: { flex: 1 },
