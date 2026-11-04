@@ -40,7 +40,7 @@ export default function Navigation() {
         {user ? (
           <>
             <Stack.Screen name="Home" component={Home} />
-            <Stack.Screen name="Servicios" component={Servicios} options={{ headerShown: true, title: 'Servicios' }} />
+            <Stack.Screen name="Servicios" component={Servicios} />
           </>
         ) : (
           <>

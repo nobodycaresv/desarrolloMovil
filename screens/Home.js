@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Image, Alert, TouchableOpacity } fr
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
-
+import BarraInferior from '../components/BarraInferior';
 export default function Home({ navigation }) {
 
   const handleCerrarSesion = () => {
@@ -42,12 +42,6 @@ export default function Home({ navigation }) {
           <Ionicons name="log-out-outline" size={24} color="#BD201B" />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={{ backgroundColor: '#BD201B', padding: 12, borderRadius: 24, margin: 16 }}
-        onPress={() => navigation.navigate('Servicios')}
-      >
-        <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Ver servicios</Text>
-</TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scrollPantalla} showsVerticalScrollIndicator={false}>
 
         {/* Logo de nuestra empresa*/}
@@ -104,25 +98,8 @@ export default function Home({ navigation }) {
           </Text>
         </View>
       </ScrollView>
-
-      <View style={styles.barraMenuInferior}>
-        <View style={styles.menuSeleccionado}>
-          <Ionicons name="home" size={20} color="#BD201B" />
-          <Text style={styles.textoMenuSeleccionado}>Inicio</Text>
-        </View>
-        <View style={styles.tarjetaMenu}>
-          <Ionicons name="sparkles-outline" size={20} color="#888" />
-          <Text style={styles.textoTarjetaMenu}>Servicios</Text>
-        </View>
-        <View style={styles.tarjetaMenu}>
-          <Ionicons name="calendar-outline" size={20} color="#888" />
-          <Text style={styles.textoTarjetaMenu}>Reservar</Text>
-        </View>
-        <View style={styles.tarjetaMenu}>
-          <Ionicons name="person-outline" size={20} color="#888" />
-          <Text style={styles.textoTarjetaMenu}>Perfil</Text>
-        </View>
-      </View>
+      
+      <BarraInferior activa="Home" navigation={navigation} /> 
     </View>
   );
 }
