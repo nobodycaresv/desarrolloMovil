@@ -1,55 +1,50 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,Image,
-  KeyboardAvoidingView, ScrollView, Platform, // Para que el teclado no tape los campos
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Respeta la zona segura (notch, barra de estado)
-import { Ionicons } from '@expo/vector-icons'; // Íconos (sobre, candado, ojo)
-import { signInWithEmailAndPassword } from 'firebase/auth'; // Función de Firebase que valida las credenciales
-import { auth } from '../src/config/firebaseConfig'; // Conexión a Firebase
-// Estilos compartidos del grupo: colores, tamaños y estilos de campo y botón
-import {
-  colors, typography, spacing, inputStyles, buttonStyles,
-} from '../src/config/theme';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../src/config/firebaseConfig';
+// Estilos compartidos del grupo (colores, tamaños, campos y botones)
+import { colors, typography, spacing, inputStyles, buttonStyles, } from '../src/config/theme';
 
-// no puede estar vacío ni tener solo espacios
+const MAX_CORREO = 30;   // máximo estándar de un correo
+const MIN_CONTRASENA = 6; // Firebase no admite contraseñas más cortas
+
 const estaVacio = (valor) => valor.trim().length === 0;
 
-// el correo debe contener '@' y '.'
-const tieneFormatoBasico = (correo) => {
-  const texto = correo.trim();
-  return texto.includes('@') && texto.includes('.');
-};
+const tieneFormatoBasico = (correo) => /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(correo.trim());
 
-// Devuelven el mensaje de error, o '' si el campo es válido
 const validarCorreo = (correo) => {
   if (estaVacio(correo)) return 'El correo electrónico es obligatorio.';
+  if (correo.trim().length > MAX_CORREO) return 'El correo es demasiado largo.';
   if (!tieneFormatoBasico(correo)) return 'Por favor, ingrese un correo válido.';
   return '';
 };
 
 const validarContrasena = (contrasena) => {
   if (estaVacio(contrasena)) return 'La contraseña es obligatoria.';
+  if (contrasena.length < MIN_CONTRASENA) return `La contraseña debe tener al menos ${MIN_CONTRASENA} caracteres.`;
   return '';
 };
 
-// Mensaje único para CUALQUIER fallo de autenticación (usuario inexistente, contraseña
-// incorrecta, cuenta deshabilitada...)
+// Mensaje único para cualquier fallo de credenciales (no revela qué correos existen)
 const MENSAJE_CREDENCIALES = 'Credenciales inválidas. Por favor, verifique su correo y contraseña.';
 const MENSAJE_CONEXION = 'Error de conexión, por favor intente más tarde.';
 
 export default function Login({ navigation }) {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [errores, setErrores] = useState({ correo: '', contrasena: '' }); // errores por campo
-  const [errorServidor, setErrorServidor] = useState('');                 // error devuelto por Firebase
-  const [mostrarContrasena, setMostrarContrasena] = useState(false);      // ojo para ver/ocultar
-  const [loading, setLoading] = useState(false);                          // true mientras se autentica (evita doble toque)
+  const [errores, setErrores] = useState({ correo: '', contrasena: '' });
+  const [errorServidor, setErrorServidor] = useState('');
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
+  const [loading, setLoading] = useState(false); // evita doble toque mientras se autentica
+  // Recordar Contraseña. Solo se tilda, no guarda la contraseña.
+  const [recordar, setRecordar] = useState(false);
 
-  // El botón "Ingresar" queda deshabilitado hasta que ambos campos estén completos
+  // El botón se habilita solo cuando ambos campos son completados
   const formularioCompleto = !estaVacio(correo) && !estaVacio(contrasena);
 
-  // Al escribir se actualiza el valor y se limpian los errores para que el usuario corrija
+  // Al escribir se limpian los errores para que el usuario corrija
   const manejarCambioCorreo = (texto) => {
     setCorreo(texto);
     if (errores.correo) setErrores((prev) => ({ ...prev, correo: '' }));
@@ -62,15 +57,14 @@ export default function Login({ navigation }) {
     if (errorServidor) setErrorServidor('');
   };
 
-  // Al salir de un campo se valida ese campo
+  // Al salir de un campo se valida
   const manejarBlurCorreo = () => setErrores((prev) => ({ ...prev, correo: validarCorreo(correo) }));
   const manejarBlurContrasena = () => setErrores((prev) => ({ ...prev, contrasena: validarContrasena(contrasena) }));
 
-  // Se ejecuta al apretar "INGRESAR"
   const manejarIngresar = async () => {
     if (loading) return;
 
-    // Validación del cliente, si hay algún error, no se llama al servidor
+    // Si hay errores en el cliente, no se llama al servidor
     const nuevosErrores = {
       correo: validarCorreo(correo),
       contrasena: validarContrasena(contrasena),
@@ -79,10 +73,10 @@ export default function Login({ navigation }) {
     setErrorServidor('');
     if (nuevosErrores.correo || nuevosErrores.contrasena) return;
 
-    //Firebase Authentication comprueba correo y contraseña
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, correo.trim(), contrasena); // cambia de pantalla solo cuando el usuario inicia sesión.
+      // No se navega aquí: Navigation.js escucha la sesión (onAuthStateChanged)
+      await signInWithEmailAndPassword(auth, correo.trim(), contrasena);
     } catch (error) {
       if (error.code === 'auth/network-request-failed') {
         setErrorServidor(MENSAJE_CONEXION);
@@ -90,7 +84,7 @@ export default function Login({ navigation }) {
         setErrorServidor(MENSAJE_CREDENCIALES);
       }
     } finally {
-      setLoading(false); // vuelve a habilitar el botón
+      setLoading(false);
     }
   };
 
@@ -98,22 +92,19 @@ export default function Login({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* KeyboardAvoidingView sube el contenido cuando aparece el teclado */}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ScrollView permite desplazarse si el contenido no entra en pantalla */}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled" // Los botones responden al primer toque aunque haya teclado
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <Image source={require('../assets/logo-rosario.png')} style={styles.logo} />
           <Text style={styles.title}>Iniciar sesión</Text>
           <Text style={styles.subtitle}>Ingrese su correo y contraseña para continuar</Text>
 
-          {/* Muestra error del sesrvidor */}
           {errorServidor ? <Text style={styles.errorServidor}>{errorServidor}</Text> : null}
 
           <Text style={styles.label}>Correo electrónico</Text>
@@ -125,12 +116,13 @@ export default function Login({ navigation }) {
               placeholderTextColor={colors.textMuted}
               value={correo}
               onChangeText={manejarCambioCorreo}
-              onBlur={manejarBlurCorreo} // Valida al salir del campo
-              keyboardType="email-address" // Teclado con @
-              autoCapitalize="none"        // No pone mayúscula al inicio
+              onBlur={manejarBlurCorreo}
+              keyboardType="email-address"
+              autoCapitalize="none"
               autoCorrect={false}
               autoComplete="email"
               textContentType="emailAddress"
+              maxLength={MAX_CORREO}
             />
           </View>
           {errores.correo ? <Text style={styles.errorText}>{errores.correo}</Text> : null}
@@ -166,6 +158,21 @@ export default function Login({ navigation }) {
           </View>
           {errores.contrasena ? <Text style={styles.errorText}>{errores.contrasena}</Text> : null}
 
+          {/* CAMBIO 4: casilla "Recordar contraseña" (solo visual) */}
+          <TouchableOpacity
+            style={styles.recordarContainer}
+            onPress={() => setRecordar((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: recordar }}
+          >
+            <Ionicons
+              name={recordar ? 'checkbox' : 'square-outline'}
+              size={22}
+              color={colors.textSecondary}
+            />
+            <Text style={styles.recordarText}>Recordar contraseña</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[buttonStyles.primary, botonDeshabilitado && styles.buttonDisabled]}
             onPress={manejarIngresar}
@@ -176,7 +183,6 @@ export default function Login({ navigation }) {
             <Text style={buttonStyles.primaryText}>INGRESAR</Text>
           </TouchableOpacity>
 
-          {/* Links a las otras pantallas */}
           <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
             <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
@@ -189,12 +195,12 @@ export default function Login({ navigation }) {
   );
 }
 
-// Aqui se ven los estilos de esta pantalla, el resto sale de theme.js
+// Solo estilos propios de esta pantalla; el resto sale de theme.js
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background }, // fondo negro
+  container: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   scrollContent: {
-    flexGrow: 1, // flexGrow (y no flex) permite desplazarse si no entra todo
+    flexGrow: 1, // permite scroll si el contenido no entra en pantalla
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: 40,
@@ -218,7 +224,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   icon: { marginRight: spacing.sm },
-  inputError: { borderColor: colors.borderRed }, // borde rojo cuando el campo tiene error
+  inputError: { borderColor: colors.borderRed },
   errorText: {
     color: colors.textRed,
     fontSize: typography.fontSize.sm,
@@ -230,17 +236,27 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.md,
   },
-  buttonDisabled: { opacity: 0.5 }, // botón atenuado cuando está deshabilitado
+  buttonDisabled: { opacity: 0.5 },
+  recordarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  recordarText: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.md,
+    marginLeft: spacing.sm,
+  },
   linkText: {
     textAlign: 'center',
     color: colors.textSecondary,
     marginTop: spacing.md,
   },
-    logo: {
+  logo: {
     width: 220,
-    height: 110,          // respeta la proporción del archivo (725×360)
-    resizeMode: 'contain', // no deforma ni recorta la imagen
-    alignSelf: 'center',   // lo centra horizontalmente
+    height: 110,
+    resizeMode: 'contain',
+    alignSelf: 'center',
     marginBottom: spacing.xl,
   },
 });
