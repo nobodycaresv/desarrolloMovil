@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../src/config/theme';
+import BarraInferior from '../components/BarraInferior';
 
 const GRILLA_TURNOS = [
   { id: '1', hora: '08:30', disponible: true },
@@ -126,6 +127,7 @@ export default function Turnos({ route, navigation }) {
           <Text style={styles.textoBoton}>Vista previa (sin funcionalidad)</Text>
         </Pressable>
       </ScrollView>
+      <BarraInferior activa="Reservar" navigation={navigation} />
     </View>
   );
 }

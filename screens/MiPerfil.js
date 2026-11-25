@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import BarraInferior from '../components/BarraInferior';
 
 export default function MiPerfil({ navigation }) {
   // Modelo de datos preparado para conectar con Firebase / Firestore
@@ -212,6 +213,7 @@ export default function MiPerfil({ navigation }) {
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
+      <BarraInferior activa="Perfil" navigation={navigation} />
     </SafeAreaView>
   );
 }
