@@ -13,6 +13,8 @@ export default function BarraInferior({ activa, navigation }) {
     const ir = (clave) => {
         if (clave === activa) return;
         if (clave === 'Home' || clave === 'Servicios') navigation.replace(clave);
+        else if (clave === 'Reservar') navigation.navigate('Turnos');
+        else if (clave === 'Perfil') navigation.navigate('MiPerfil');
         else Alert.alert('Próximamente', 'Esta sección todavía no está disponible.');
     };
 
