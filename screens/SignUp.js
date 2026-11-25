@@ -160,6 +160,7 @@ export default function SignUp({ navigation }) {
                   placeholder: 'Ingresa tu Teléfono',
                   keyboard: 'phone-pad',
                   icon: 'call-outline',
+                  maxLength: 11,
                 },
               ].map((item) => (
                 <View key={item.key}>
@@ -186,6 +187,7 @@ export default function SignUp({ navigation }) {
                       onBlur={() => handleBlur(item.key)}
                       keyboardType={item.keyboard || 'default'}
                       autoCapitalize={item.autoCap || 'sentences'}
+                      maxLength={item.maxLength || 50}
                     />
                   </View>
                   {errors[item.key] && (
