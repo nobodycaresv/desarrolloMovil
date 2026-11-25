@@ -1,10 +1,19 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Image, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Image, Alert, Pressable } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 
-export default function Home() {
+const SERVICIOS_DEMO = [
+  { id: '1', nombre: 'Lavado Full & Encerado', detalle: 'Limpieza exterior, interior y brillo' },
+  { id: '2', nombre: 'Detailing & Pulido', detalle: 'Corrección de pintura y acabado profundo' },
+  { id: '3', nombre: 'Limpieza de Tapizados', detalle: 'Acondicionado de butacas y paneles' },
+];
+
+export default function Home({ navigation }) {
+  const irATurnos = (servicioNombre = 'Lavado & Detailing') => {
+    navigation?.navigate?.('Turnos', { servicio: servicioNombre });
+  };
 
   const handleCerrarSesion = () => {
     Alert.alert(
@@ -31,29 +40,29 @@ export default function Home() {
 
   return (
     <View style={styles.contenedorGeneral}>
-      {/* Header superior */}
       <View style={styles.encabezado}>
         <View style={styles.contenedorTitulosEncabezado}>
           <Text style={styles.tituloEncabezado}>Nosotros</Text>
           <Text style={styles.subtituloEncabezado}>Te contamos un poco de nuestra historia.</Text>
         </View>
 
-        <TouchableOpacity style={styles.botonSalir} onPress={handleCerrarSesion}>
+        <Pressable
+          style={({ pressed }) => [styles.botonSalir, pressed && styles.presionado]}
+          onPress={handleCerrarSesion}
+        >
           <Ionicons name="log-out-outline" size={24} color="#BD201B" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollPantalla} showsVerticalScrollIndicator={false}>
-
-        {/* Logo de nuestra empresa*/}
         <View style={styles.contenedorLogo}>
-          <Image 
-            source={require('../assets/Logo_RosarioEstetica.jpg')} 
+          <Image
+            source={require('../assets/Logo_RosarioEstetica.jpg')}
             style={styles.imagenLogo}
-            resizeMode="contain" 
+            resizeMode="contain"
           />
         </View>
-        
+
         <View style={styles.contenedor3Estadisticas}>
           <View style={styles.tarjetaEstadistica}>
             <Text style={styles.tituloEstadistica}>Desde</Text>
@@ -98,6 +107,27 @@ export default function Home() {
             Cuidamos la estética de tu auto: una inversión segura.
           </Text>
         </View>
+
+        <View style={styles.seccionServicios}>
+          <Text style={styles.tituloSeccionServicios}>Elegí un servicio para ver turnos</Text>
+          {SERVICIOS_DEMO.map((servicio) => (
+            <Pressable
+              key={servicio.id}
+              onPress={() => irATurnos(servicio.nombre)}
+              android_ripple={{ color: '#8A1410' }}
+              style={({ pressed }) => [
+                styles.tarjetaServicio,
+                pressed && styles.presionado,
+              ]}
+            >
+              <View style={styles.textoServicioWrap}>
+                <Text style={styles.nombreServicioItem}>{servicio.nombre}</Text>
+                <Text style={styles.detalleServicioItem}>{servicio.detalle}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#BD201B" />
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
 
       <View style={styles.barraMenuInferior}>
@@ -109,10 +139,13 @@ export default function Home() {
           <Ionicons name="sparkles-outline" size={20} color="#888" />
           <Text style={styles.textoTarjetaMenu}>Servicios</Text>
         </View>
-        <View style={styles.tarjetaMenu}>
+        <Pressable
+          style={({ pressed }) => [styles.tarjetaMenu, pressed && styles.presionado]}
+          onPress={() => irATurnos('Lavado & Detailing')}
+        >
           <Ionicons name="calendar-outline" size={20} color="#888" />
           <Text style={styles.textoTarjetaMenu}>Reservar</Text>
-        </View>
+        </Pressable>
         <View style={styles.tarjetaMenu}>
           <Ionicons name="person-outline" size={20} color="#888" />
           <Text style={styles.textoTarjetaMenu}>Perfil</Text>
@@ -128,7 +161,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     paddingTop: 45,
   },
-
+  
   encabezado: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -144,7 +177,6 @@ const styles = StyleSheet.create({
   botonSalir: {
     padding: 8,
   },
- 
 
   tituloEncabezado: {
     color: '#FFFFFF',
@@ -161,7 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
-  
+
   contenedorLogo: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -232,6 +264,46 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
+  seccionServicios: {
+    marginTop: 14,
+  },
+
+  tituloSeccionServicios: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+
+  tarjetaServicio: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#141414',
+    borderWidth: 1,
+    borderColor: '#BD201B',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+  },
+
+  textoServicioWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  nombreServicioItem: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+
+  detalleServicioItem: {
+    color: '#AAAAAA',
+    fontSize: 12,
+    marginTop: 2,
+  },
+
   barraMenuInferior: {
     flexDirection: 'row',
     backgroundColor: '#0A0A0A',
@@ -263,5 +335,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-
+  presionado: {
+    opacity: 0.7,
+  },
 });

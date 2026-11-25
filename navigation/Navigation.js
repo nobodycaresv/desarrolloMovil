@@ -7,6 +7,7 @@ import { auth, isFirebaseConfigured } from '../src/config/firebaseConfig';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
+import Turnos from '../screens/Turnos';
 import ForgotPassword from '../screens/ForgotPassword';
 
 const Stack = createStackNavigator();
@@ -30,14 +31,21 @@ export default function Navigation() {
   }
 
   if (user === undefined) {
-    return <View style={styles.center}><ActivityIndicator size="large" /></View>;
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
-  
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Home" component={Home} />
+          <>
+            <Stack.Screen name="Home" component={Home} />
+            <Stack.Screen name="Turnos" component={Turnos} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={Login} />
@@ -48,7 +56,6 @@ export default function Navigation() {
       </Stack.Navigator>
     </NavigationContainer>
   );
-  
 }
 
 const styles = StyleSheet.create({
