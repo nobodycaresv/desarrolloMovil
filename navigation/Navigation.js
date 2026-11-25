@@ -7,6 +7,11 @@ import { auth, isFirebaseConfigured } from '../src/config/firebaseConfig';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
+import MiPerfil from '../screens/MiPerfil';
+import EditarPerfil from '../screens/EditarPerfil';
+import Contacto from '../screens/Contacto';
+import ContactoConsulta from '../screens/ContactoConsulta';
+import ConsultaEnviada from '../screens/ConsultaEnviada';
 
 const Stack = createStackNavigator();
 
@@ -36,7 +41,14 @@ export default function Navigation() {
     <NavigationContainer>
       <Stack.Navigator>
         {user ? (
-          <Stack.Screen name="Home" component={Home} options={{ title: 'Inicio' }} />
+          <>
+            <Stack.Screen name="Home" component={Home} options={{ title: 'Inicio' }} />
+            <Stack.Screen name="MiPerfil" component={MiPerfil} options={{ headerShown: false }} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ headerShown: false }} />
+            <Stack.Screen name="Contacto" component={Contacto} options={{ headerShown: false }} />
+            <Stack.Screen name="ContactoConsulta" component={ContactoConsulta} options={{ headerShown: false }} />
+            <Stack.Screen name="ConsultaEnviada" component={ConsultaEnviada} options={{ headerShown: false }} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={Login} options={{ title: 'Iniciar sesión' }} />
